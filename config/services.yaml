@@ -1,0 +1,104 @@
+# config/services.yaml
+parameters:
+  locale: "fr"
+  app.uploads.directory: "%kernel.project_dir%/public/media"
+  app.uploads.property_images: "%app.uploads.directory%/properties"
+  app.uploads.user_images: "%app.uploads.directory%/users"
+
+  # Payment configuration
+  app.payment.sandbox: true
+  app.payment.stripe_public_key: "%env(STRIPE_PUBLIC_KEY)%"
+  app.payment.stripe_secret_key: "%env(STRIPE_SECRET_KEY)%"
+  app.payment.paypal_client_id: "%env(PAYPAL_CLIENT_ID)%"
+  app.payment.paypal_client_secret: "%env(PAYPAL_CLIENT_SECRET)%"
+
+services:
+  # Default configuration for services in *this* file
+  _defaults:
+    autowire: true # Automatically injects dependencies in your services
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    bind:
+      $propertyImagesDirectory: "%app.uploads.property_images%"
+      $userImagesDirectory: "%app.uploads.user_images%"
+
+  # Makes classes in src/ available to be used as services
+  # This creates a service per class whose id is the fully-qualified class name
+  App\:
+    resource: "../src/"
+    exclude:
+      - "../src/DependencyInjection/"
+      - "../src/Entity/"
+      - "../src/Kernel.php"
+
+  # Add more service definitions when explicit configuration is needed
+  # Please note that last definitions always *replace* previous ones
+
+  # File uploader service
+  App\Service\File\FileUploader:
+    arguments:
+      $propertyImagesDirectory: "%app.uploads.property_images%"
+      $userImagesDirectory: "%app.uploads.user_images%"
+
+  # API Platform processors for API 3.x
+  App\DataPersister\UserDataPersister:
+    arguments:
+      - "@doctrine.orm.entity_manager"
+      - "@security.user_password_hasher"
+    tags:
+      - { name: "api_platform.state_processor", priority: 0 }
+
+  App\DataPersister\PropertyImageDataPersister:
+    arguments:
+      - "@doctrine.orm.entity_manager"
+      - '@App\Service\File\FileUploader'
+    tags:
+      - { name: "api_platform.state_processor", priority: 0 }
+
+  # JWT Authentication event listeners
+  App\EventListener\JWTCreatedListener:
+    tags:
+      - {
+          name: "kernel.event_listener",
+          event: "lexik_jwt_authentication.on_jwt_created",
+          method: "onJWTCreated",
+        }
+
+  App\EventListener\AuthenticationSuccessListener:
+    tags:
+      - {
+          name: "kernel.event_listener",
+          event: "lexik_jwt_authentication.on_authentication_success",
+          method: "onAuthenticationSuccessResponse",
+        }
+
+  # Doctrine entity listeners
+  App\EventListener\UserEntityListener:
+    tags:
+      - {
+          name: "doctrine.orm.entity_listener",
+          event: "prePersist",
+          entity: 'App\Entity\User',
+        }
+      - {
+          name: "doctrine.orm.entity_listener",
+          event: "preUpdate",
+          entity: 'App\Entity\User',
+        }
+
+  App\EventListener\PropertyEntityListener:
+    tags:
+      - {
+          name: "doctrine.orm.entity_listener",
+          event: "prePersist",
+          entity: 'App\Entity\Property',
+        }
+      - {
+          name: "doctrine.orm.entity_listener",
+          event: "preUpdate",
+          entity: 'App\Entity\Property',
+        }
+
+  # Add our authenticator for form login
+  App\Security\UserAuthenticator:
+    arguments:
+      - "@router"

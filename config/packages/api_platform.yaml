@@ -1,0 +1,53 @@
+# config/packages/api_platform.yaml
+api_platform:
+    title: 'AtypikHouse API'
+    description: 'API for managing unusual accommodations'
+    version: '1.0.0'
+    
+    # Enable the Swagger documentation
+    swagger:
+        api_keys:
+            JWT:
+                name: Authorization
+                type: header
+    
+    # Enable JSON-LD, HAL, OpenAPI formats
+    formats:
+        jsonld:
+            mime_types: ['application/ld+json']
+        json:
+            mime_types: ['application/json']
+        html:
+            mime_types: ['text/html']
+    
+    # API defaults
+    defaults:
+        stateless: true
+        cache_headers:
+            vary: ['Content-Type', 'Authorization', 'Origin']
+        pagination_enabled: true
+        pagination_client_enabled: true
+        pagination_client_items_per_page: true
+        pagination_items_per_page: 10
+        pagination_maximum_items_per_page: 50
+        collection:
+            pagination:
+                enabled_parameter_name: pagination
+                items_per_page_parameter_name: itemsPerPage
+                page_parameter_name: page
+    
+    # Enable the API documentation
+    enable_docs: true
+    enable_entrypoint: true
+    enable_swagger: true
+    enable_swagger_ui: true
+    
+    # Exception handling
+    exception_to_status:
+        Symfony\Component\Serializer\Exception\ExceptionInterface: 400
+        ApiPlatform\Exception\InvalidArgumentException: 400
+        Doctrine\ORM\OptimisticLockException: 409
+        
+    # Mapping
+    mapping:
+        paths: ['%kernel.project_dir%/src/Entity']

@@ -1,0 +1,24 @@
+# config/packages/lexik_jwt_authentication.yaml
+lexik_jwt_authentication:
+  secret_key: "%env(resolve:JWT_SECRET_KEY)%"
+  public_key: "%env(resolve:JWT_PUBLIC_KEY)%"
+  pass_phrase: "%env(JWT_PASSPHRASE)%"
+  token_ttl: 3600 # 1 hour
+  #user_identity_field: email
+  user_id_claim: "email" # ou 'username' selon votre configuration
+
+  # Token extraction
+  token_extractors:
+    authorization_header:
+      enabled: true
+      prefix: Bearer
+      name: Authorization
+    cookie:
+      enabled: false
+    query_parameter:
+      enabled: false
+      name: bearer
+
+  # Additional settings
+  clock_skew: 0
+  allow_no_expiration: false
